@@ -1,0 +1,511 @@
+basePath: /api/v1
+definitions:
+  payslip-generator_pkg_models.AttendancePeriod:
+    properties:
+      createdAt:
+        type: string
+      createdBy:
+        description: Pointer to allow nil
+        type: string
+      endDate:
+        type: string
+      id:
+        type: string
+      ipaddress:
+        description: Pointer to allow nil
+        type: string
+      payrollRunAt:
+        type: string
+      startDate:
+        type: string
+      updatedAt:
+        type: string
+      updatedBy:
+        description: Pointer to allow nil
+        type: string
+    type: object
+  pkg_controllers.CreateAttendancePeriodPayload:
+    properties:
+      end_date:
+        type: string
+      start_date:
+        type: string
+    required:
+    - end_date
+    - start_date
+    type: object
+  pkg_controllers.LoginPayload:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    required:
+    - password
+    - username
+    type: object
+  pkg_controllers.RunPayrollPayload:
+    properties:
+      attendance_period_id:
+        type: string
+    required:
+    - attendance_period_id
+    type: object
+  pkg_controllers.SubmitOvertimePayload:
+    properties:
+      date:
+        type: string
+      hours:
+        description: 'Example: Using struct tags for validation info in docs'
+        maximum: 3
+        minimum: 1
+        type: integer
+    required:
+    - date
+    - hours
+    type: object
+  pkg_controllers.SubmitReimbursementPayload:
+    properties:
+      amount:
+        type: number
+      description:
+        type: string
+    required:
+    - amount
+    - description
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@example.com
+    name: API Support
+    url: https://github.com/your-repo/payslip-generator
+  description: This is a Fiber-based API for a payslip generation system.
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: http://swagger.io/terms/
+  title: Payslip Generation API
+  version: "1.0"
+paths:
+  /admin/attendance-periods:
+    post:
+      consumes:
+      - application/json
+      description: Allows an admin to create a new attendance period.
+      parameters:
+      - description: Attendance Period Details
+        in: body
+        name: period
+        required: true
+        schema:
+          $ref: '#/definitions/pkg_controllers.CreateAttendancePeriodPayload'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Successful response with created attendance period
+          schema:
+            properties:
+              data:
+                $ref: '#/definitions/payslip-generator_pkg_models.AttendancePeriod'
+              status:
+                type: string
+            type: object
+        "400":
+          description: Validation error or invalid input
+          schema:
+            properties:
+              message:
+                type: string
+              status:
+                type: string
+            type: object
+        "401":
+          description: Unauthorized - Admin ID not found or invalid token
+          schema:
+            properties:
+              message:
+                type: string
+              status:
+                type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            properties:
+              message:
+                type: string
+              status:
+                type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create Attendance Period
+      tags:
+      - Admin
+  /admin/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticates an admin and returns a JWT token.
+      parameters:
+      - description: Admin Credentials
+        in: body
+        name: credentials
+        required: true
+        schema:
+          $ref: '#/definitions/pkg_controllers.LoginPayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Admin Login
+      tags:
+      - Auth
+  /admin/payroll:
+    post:
+      consumes:
+      - application/json
+      description: Allows an admin to run payroll for a specified attendance period.
+      parameters:
+      - description: Payroll Run Details
+        in: body
+        name: payroll_run
+        required: true
+        schema:
+          $ref: '#/definitions/pkg_controllers.RunPayrollPayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Run Payroll
+      tags:
+      - Admin
+  /admin/payslips-summary:
+    get:
+      consumes:
+      - application/json
+      description: Allows an admin to retrieve a summary of all payslips for a given
+        attendance period.
+      parameters:
+      - description: Attendance Period ID (UUID)
+        format: uuid
+        in: query
+        name: period_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get Payslips Summary
+      tags:
+      - Admin
+  /employee/attendance:
+    post:
+      consumes:
+      - application/json
+      description: Allows an authenticated employee to submit their attendance for
+        the current day.
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Submit Employee Attendance
+      tags:
+      - Employee
+  /employee/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticates an employee and returns a JWT token.
+      parameters:
+      - description: Employee Credentials
+        in: body
+        name: credentials
+        required: true
+        schema:
+          $ref: '#/definitions/pkg_controllers.LoginPayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Employee Login
+      tags:
+      - Auth
+  /employee/overtime:
+    post:
+      consumes:
+      - application/json
+      description: Allows an authenticated employee to submit an overtime record.
+      parameters:
+      - description: Overtime Details
+        in: body
+        name: overtime_details
+        required: true
+        schema:
+          $ref: '#/definitions/pkg_controllers.SubmitOvertimePayload'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Submit Employee Overtime
+      tags:
+      - Employee
+  /employee/payslip:
+    get:
+      consumes:
+      - application/json
+      description: Allows an authenticated employee to retrieve their own payslip
+        for a specified period.
+      parameters:
+      - description: Attendance Period ID (UUID) for the payslip
+        format: uuid
+        in: query
+        name: period_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get Employee Payslip
+      tags:
+      - Employee
+  /employee/reimbursements:
+    post:
+      consumes:
+      - application/json
+      description: Allows an authenticated employee to submit a reimbursement request.
+      parameters:
+      - description: Reimbursement Details
+        in: body
+        name: reimbursement_details
+        required: true
+        schema:
+          $ref: '#/definitions/pkg_controllers.SubmitReimbursementPayload'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Submit Employee Reimbursement Request
+      tags:
+      - Employee
+schemes:
+- http
+- https
+securityDefinitions:
+  BearerAuth:
+    description: Type "Bearer" followed by a space and JWT token.
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
